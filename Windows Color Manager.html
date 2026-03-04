@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Менеджер цветов Windows</title>
+    <style>
+        :root {
+            --color-bg-primary: #fcfcf9;
+            --color-bg-secondary: #fffffe;
+            --color-text-primary: #13343b;
+            --color-text-secondary: #626c71;
+            --color-primary: #21808d;
+            --color-primary-hover: #1d7480;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-secondary-bg: rgba(94, 82, 64, 0.12);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-bg-primary: #1f2121;
+                --color-bg-secondary: #262828;
+                --color-text-primary: #f5f5f5;
+                --color-text-secondary: #a7a9a9;
+                --color-primary: #32b8c6;
+                --color-primary-hover: #2da6b2;
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-secondary-bg: rgba(119, 124, 124, 0.15);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--color-text-primary);
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .mode-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: var(--color-secondary-bg);
+        }
+
+        .mode-description {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            padding: 12px;
+            background: var(--color-secondary-bg);
+            border-radius: 6px;
+        }
+
+        .primary-color-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .color-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .color-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .color-value {
+            font-family: 'Courier New', monospace;
+            background: var(--color-secondary-bg);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        .color-picker-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .color-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid var(--color-border);
+            cursor: pointer;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .color-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .color-input-wrapper {
+            flex: 1;
+        }
+
+        .color-input {
+            width: 100%;
+            height: 60px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--color-bg-secondary);
+        }
+
+        .color-input::-webkit-color-swatch-wrapper {
+            padding: 4px;
+        }
+
+        .color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 6px;
+        }
+
+        .rgb-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .rgb-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .rgb-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+        }
+
+        .rgb-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            font-size: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .rgb-input:focus {
+            outline: 2px solid var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .generated-colors {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .generated-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .color-item {
+            background: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .color-item-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .color-item-preview {
+            width: 100%;
+            height: 40px;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+            margin-bottom: 8px;
+        }
+
+        .color-item-rgb {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+        }
+
+        .manual-edit-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .manual-edit-section.active {
+            display: block;
+        }
+
+        .manual-colors-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .manual-color-row {
+            display: grid;
+            grid-template-columns: 200px 1fr 150px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            background: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+        }
+
+        .manual-color-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .manual-rgb-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .manual-rgb-input {
+            padding: 8px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-bg-secondary);
+            color: var(--color-text-primary);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .manual-color-preview {
+            height: 40px;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+        }
+
+        .output-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .output-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .reg-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            margin-bottom: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .reg-comment {
+            color: #6a9955;
+        }
+
+        .reg-key {
+            color: #ce9178;
+        }
+
+        .reg-value {
+            color: #9cdcfe;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--color-secondary-bg);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-border);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--color-primary);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .color-picker-group {
+                flex-direction: column;
+            }
+
+            .rgb-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .manual-color-row {
+                grid-template-columns: 1fr;
+            }
+
+            .color-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .help-text {
+            margin-top: 12px;
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Менеджер цветов Windows</h1>
+        <p class="subtitle">Автоматическая генерация связанных цветов или ручная настройка всех параметров</p>
+
+        <!-- Mode Selection -->
+        <div class="mode-section">
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="mode-auto" onclick="setMode('auto')">
+                    ⚡ Автоматический режим
+                </button>
+                <button class="mode-btn" id="mode-manual" onclick="setMode('manual')">
+                    🎯 Ручная настройка
+                </button>
+            </div>
+            <div class="mode-description" id="mode-description">
+                Выберите один основной цвет — остальные будут созданы автоматически с учётом зависимостей
+            </div>
+        </div>
+
+        <!-- Primary Color Selector (Auto Mode) -->
+        <div class="primary-color-section" id="auto-mode-section">
+            <div class="color-header">
+                <h2 class="color-title">Основной цвет (Hilight)</h2>
+                <div class="color-value" id="primary-rgb">RGB: 0, 120, 215</div>
+            </div>
+
+            <div class="color-picker-group">
+                <div class="color-preview" id="primary-preview" style="background-color: rgb(0, 120, 215);"></div>
+                <div class="color-input-wrapper">
+                    <input type="color" id="primary-picker" class="color-input" value="#0078d7">
+                </div>
+            </div>
+
+            <div class="rgb-inputs">
+                <div class="rgb-input-group">
+                    <label class="rgb-label">Red (R)</label>
+                    <input type="number" id="primary-r" class="rgb-input" min="0" max="255" value="0">
+                </div>
+                <div class="rgb-input-group">
+                    <label class="rgb-label">Green (G)</label>
+                    <input type="number" id="primary-g" class="rgb-input" min="0" max="255" value="120">
+                </div>
+                <div class="rgb-input-group">
+                    <label class="rgb-label">Blue (B)</label>
+                    <input type="number" id="primary-b" class="rgb-input" min="0" max="255" value="215">
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Colors Preview (Auto Mode) -->
+        <div class="generated-colors" id="generated-section">
+            <h3 class="generated-title">🔗 Автоматически сгенерированные цвета</h3>
+            <div class="color-grid" id="color-grid"></div>
+        </div>
+
+        <!-- Manual Edit Section -->
+        <div class="manual-edit-section" id="manual-mode-section">
+            <h3 class="generated-title">🎯 Ручная настройка всех цветов</h3>
+            <div class="manual-colors-grid" id="manual-colors-grid"></div>
+        </div>
+
+        <!-- Registry Output -->
+        <div class="output-section">
+            <h3 class="output-title">📋 Код для редактора реестра</h3>
+            
+            <div class="reg-output" id="registry-code"></div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="copyToClipboard()">
+                    📋 Копировать код
+                </button>
+                <button class="btn btn-secondary" onclick="downloadRegFile()">
+                    💾 Скачать .reg файл
+                </button>
+                <button class="btn btn-secondary" onclick="resetColors()">
+                    🔄 Сбросить по умолчанию
+                </button>
+            </div>
+            <p class="help-text">
+                Для применения изменений: 1) сохраните или скачайте <code>.reg</code>-файл, 2) щёлкните по нему правой кнопкой → <b>Свойства</b> и, если внизу есть флажок <b>«Разблокировать»</b>, установите его и нажмите «Применить», 3) затем дважды щёлкните по файлу и согласитесь на добавление записей в реестр.
+            </p>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Color definitions with Windows registry keys
+        const colorDefinitions = {
+            'Hilight': { name: 'Выделение текста', auto: (r, g, b) => [r, g, b] },
+            'MenuHilight': { name: 'Выделение в меню', auto: (r, g, b) => [r, g, b] },
+            'HotTrackingColor': { name: 'Цвет при наведении', auto: (r, g, b) => darken(r, g, b, 0.10) },
+            'HilightText': { name: 'Текст на выделении', auto: () => [255, 255, 255] },
+            'ActiveTitle': { name: 'Заголовок активного окна', auto: (r, g, b) => lighten(r, g, b, 0.20) },
+            'GradientActiveTitle': { name: 'Градиент активного заголовка', auto: (r, g, b) => lighten(r, g, b, 0.35) },
+            // Неактивные заголовки тоже завязаны на основной цвет, но заметно светлее
+            'InactiveTitle': { name: 'Заголовок неактивного окна', auto: (r, g, b) => lighten(r, g, b, 0.50) },
+            'GradientInactiveTitle': { name: 'Градиент неактивного заголовка', auto: (r, g, b) => lighten(r, g, b, 0.70) },
+            'TitleText': { name: 'Текст заголовка', auto: () => [0, 0, 0] },
+            'InactiveTitleText': { name: 'Текст неактивного заголовка', auto: () => [0, 0, 0] },
+            'WindowText': { name: 'Текст окна', auto: () => [0, 0, 0] },
+            'MenuText': { name: 'Текст меню', auto: () => [0, 0, 0] },
+            'ButtonText': { name: 'Текст кнопки', auto: () => [0, 0, 0] },
+            'InfoText': { name: 'Текст подсказки', auto: () => [0, 0, 0] },
+            'GrayText': { name: 'Серый текст (недоступно)', auto: () => [109, 109, 109] },
+            'Window': { name: 'Фон окна', auto: () => [255, 255, 255] },
+            'Menu': { name: 'Фон меню', auto: () => [240, 240, 240] },
+            'MenuBar': { name: 'Фон панели меню', auto: () => [240, 240, 240] },
+            'InfoWindow': { name: 'Фон подсказки', auto: () => [255, 255, 225] },
+            'Background': { name: 'Рабочий стол', auto: () => [0, 0, 0] },
+            'AppWorkspace': { name: 'Рабочая область MDI', auto: () => [171, 171, 171] },
+            'ButtonFace': { name: 'Фон кнопки', auto: () => [240, 240, 240] },
+            'ButtonHilight': { name: 'Светлая тень кнопки', auto: () => [255, 255, 255] },
+            'ButtonLight': { name: 'Светлая граница кнопки', auto: () => [227, 227, 227] },
+            'ButtonShadow': { name: 'Тень кнопки', auto: () => [160, 160, 160] },
+            'ButtonDkShadow': { name: 'Тёмная тень кнопки', auto: () => [105, 105, 105] },
+            'ButtonAlternateFace': { name: 'Альтернативный фон кнопки', auto: () => [0, 0, 0] },
+            'Scrollbar': { name: 'Скроллбар', auto: () => [200, 200, 200] },
+            'ActiveBorder': { name: 'Граница активного окна', auto: () => [180, 180, 180] },
+            'InactiveBorder': { name: 'Граница неактивного окна', auto: () => [244, 247, 252] },
+            'WindowFrame': { name: 'Рамка окна', auto: () => [100, 100, 100] }
+        };
+
+        let currentMode = 'auto';
+        let colors = {};
+
+        // Initialize default colors
+        function initializeColors() {
+            const primary = [0, 120, 215];
+            generateColors(primary[0], primary[1], primary[2]);
+        }
+
+        // Color transformation functions
+        function darken(r, g, b, percent) {
+            const factor = 1.0 - percent;
+            return [
+                Math.round(r * factor),
+                Math.round(g * factor),
+                Math.round(b * factor)
+            ];
+        }
+
+        function lighten(r, g, b, percent) {
+            const factor = percent;
+            return [
+                Math.min(255, Math.round(r + (255 - r) * factor)),
+                Math.min(255, Math.round(g + (255 - g) * factor)),
+                Math.min(255, Math.round(b + (255 - b) * factor))
+            ];
+        }
+
+        // Generate all colors from primary
+        function generateColors(r, g, b) {
+            colors = {};
+            for (const [key, def] of Object.entries(colorDefinitions)) {
+                colors[key] = def.auto(r, g, b);
+            }
+            updateDisplay();
+        }
+
+        // Update all displays
+        function updateDisplay() {
+            if (currentMode === 'auto') {
+                updateGeneratedColorsDisplay();
+            } else {
+                updateManualColorsDisplay();
+            }
+            updateRegistryCode();
+        }
+
+        // Update generated colors grid
+        function updateGeneratedColorsDisplay() {
+            const grid = document.getElementById('color-grid');
+            grid.innerHTML = '';
+            
+            for (const [key, rgb] of Object.entries(colors)) {
+                const def = colorDefinitions[key];
+                const item = document.createElement('div');
+                item.className = 'color-item';
+                item.innerHTML = `
+                    <div class="color-item-name">${def.name}</div>
+                    <div class="color-item-preview" style="background-color: rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})"></div>
+                    <div class="color-item-rgb">${rgb[0]} ${rgb[1]} ${rgb[2]}</div>
+                `;
+                grid.appendChild(item);
+            }
+        }
+
+        // Update manual colors grid
+        function updateManualColorsDisplay() {
+            const grid = document.getElementById('manual-colors-grid');
+            grid.innerHTML = '';
+            
+            for (const [key, rgb] of Object.entries(colors)) {
+                const def = colorDefinitions[key];
+                const row = document.createElement('div');
+                row.className = 'manual-color-row';
+                row.innerHTML = `
+                    <div class="manual-color-name">${def.name}</div>
+                    <div class="manual-rgb-inputs">
+                        <input type="number" class="manual-rgb-input" min="0" max="255" value="${rgb[0]}" 
+                               onchange="updateManualColor('${key}', 0, this.value)">
+                        <input type="number" class="manual-rgb-input" min="0" max="255" value="${rgb[1]}" 
+                               onchange="updateManualColor('${key}', 1, this.value)">
+                        <input type="number" class="manual-rgb-input" min="0" max="255" value="${rgb[2]}" 
+                               onchange="updateManualColor('${key}', 2, this.value)">
+                    </div>
+                    <div class="manual-color-preview" style="background-color: rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})"></div>
+                `;
+                grid.appendChild(row);
+            }
+        }
+
+        // Update manual color
+        function updateManualColor(key, index, value) {
+            colors[key][index] = Math.max(0, Math.min(255, parseInt(value) || 0));
+            updateDisplay();
+        }
+
+        // Update registry code (только Control Panel\Colors)
+        function updateRegistryCode() {
+            const output = document.getElementById('registry-code');
+            let code = '<span class="reg-comment">Windows Registry Editor Version 5.00</span>\n\n';
+            code += '<span class="reg-key">[HKEY_CURRENT_USER\\Control Panel\\Colors]</span>\n';
+            
+            for (const [key, rgb] of Object.entries(colors)) {
+                code += `<span class="reg-value">"${key}"</span>=<span class="reg-key">"${rgb[0]} ${rgb[1]} ${rgb[2]}"</span>\n`;
+            }
+            
+            output.innerHTML = code;
+        }
+
+        // Mode switching
+        function setMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('mode-auto').classList.toggle('active', mode === 'auto');
+            document.getElementById('mode-manual').classList.toggle('active', mode === 'manual');
+            
+            document.getElementById('auto-mode-section').style.display = mode === 'auto' ? 'block' : 'none';
+            document.getElementById('generated-section').style.display = mode === 'auto' ? 'block' : 'none';
+            document.getElementById('manual-mode-section').classList.toggle('active', mode === 'manual');
+            
+            const description = mode === 'auto' 
+                ? 'Выберите один основной цвет — остальные будут созданы автоматически с учётом зависимостей'
+                : 'Настройте каждый цвет индивидуально для полного контроля над всеми параметрами';
+            document.getElementById('mode-description').textContent = description;
+            
+            updateDisplay();
+        }
+
+        // Primary color handlers
+        const primaryPicker = document.getElementById('primary-picker');
+        const primaryR = document.getElementById('primary-r');
+        const primaryG = document.getElementById('primary-g');
+        const primaryB = document.getElementById('primary-b');
+        const primaryPreview = document.getElementById('primary-preview');
+        const primaryRgbDisplay = document.getElementById('primary-rgb');
+
+        primaryPicker.addEventListener('input', (e) => {
+            const hex = e.target.value;
+            const rgb = hexToRgb(hex);
+            updatePrimaryColor(rgb.r, rgb.g, rgb.b);
+        });
+
+        primaryR.addEventListener('input', () => updatePrimaryFromRgb());
+        primaryG.addEventListener('input', () => updatePrimaryFromRgb());
+        primaryB.addEventListener('input', () => updatePrimaryFromRgb());
+        primaryPreview.addEventListener('click', () => primaryPicker.click());
+
+        function updatePrimaryFromRgb() {
+            const r = clamp(parseInt(primaryR.value) || 0);
+            const g = clamp(parseInt(primaryG.value) || 0);
+            const b = clamp(parseInt(primaryB.value) || 0);
+            updatePrimaryColor(r, g, b);
+        }
+
+        function updatePrimaryColor(r, g, b) {
+            primaryR.value = r;
+            primaryG.value = g;
+            primaryB.value = b;
+            
+            const hex = rgbToHex(r, g, b);
+            primaryPicker.value = hex;
+            primaryPreview.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            primaryRgbDisplay.textContent = `RGB: ${r}, ${g}, ${b}`;
+            
+            if (currentMode === 'auto') {
+                generateColors(r, g, b);
+            }
+        }
+
+        // Utility functions
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join('');
+        }
+
+        function clamp(value) {
+            return Math.max(0, Math.min(255, value));
+        }
+
+        function copyToClipboard() {
+            let text = 'Windows Registry Editor Version 5.00\n\n[HKEY_CURRENT_USER\\Control Panel\\Colors]\n';
+            
+            for (const [key, rgb] of Object.entries(colors)) {
+                text += `"${key}"="${rgb[0]} ${rgb[1]} ${rgb[2]}"\n`;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('✓ Скопировано в буфер обмена!');
+            }).catch(() => {
+                showNotification('❌ Ошибка копирования');
+            });
+        }
+
+        function downloadRegFile() {
+            let content = 'Windows Registry Editor Version 5.00\n\n[HKEY_CURRENT_USER\\Control Panel\\Colors]\n';
+            
+            for (const [key, rgb] of Object.entries(colors)) {
+                content += `"${key}"="${rgb[0]} ${rgb[1]} ${rgb[2]}"\n`;
+            }
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'windows_colors_full.reg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('✓ Файл скачан!');
+        }
+
+        function resetColors() {
+            updatePrimaryColor(0, 120, 215);
+            showNotification('✓ Цвета сброшены');
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        initializeColors();
+    </script>
+</body>
+</html>
